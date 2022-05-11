@@ -21,8 +21,8 @@ class patch_extractor:
         for img in images:
             R = img.shape[0]
             C = img.shape[1]
-            for row in range((R//divider) + 1):
-                for col in range((C//divider)+1):
+            for row in range(0,(R//divider) + 1, divider):
+                for col in range(0, (C//divider)+1, divider):
                     if (row*divider >= R):
                         if (col*divider>= C):
                             patch = img[row:row+divider, col:]

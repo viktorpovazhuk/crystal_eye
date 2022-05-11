@@ -44,9 +44,14 @@ class Inpainter:
         c1, c2 = 1, 5
         n = len(initial_patches)
         ssim = 0
-        for (x, y) in (initial_patches, current_patches):
-            ssim += (((2 * np.mean(x) * np.mean(y) + c1) * (2 * np.cov(x, y) + c2)) /
-                     ((np.mean(x) ** 2 + np.mean(y) ** 2 + c1) *
-                      (np.std(x) ** 2 + np.std(y) ** 2 + c2)))
+
+        i = 0
+        while i < n:
+            x = initial_patches[i] 
+            y = current_patches[i]
+        #for (x, y) in (initial_patches, current_patches):
+            ssim += (((2 * np.mean(x) * np.mean(y) + c1) * (2 * np.cov(x, y)[0,1] + c2)) /
+                     ((np.mean(x) ** 2 + np.mean(y) ** 2 + c1) * (np.std(x) ** 2 + np.std(y) ** 2 + c2)))
+            i += 1
         ssim = ssim / n
         return ssim

@@ -4,10 +4,13 @@ import matplotlib.pyplot as plt
 from inpainter import Inpainter
 from skimage.restoration import inpaint
 
-mat = cv.imread('data/cover.jpg', 0)
+mat = cv.imread('data/butter.jpg', 0)
 print(mat.shape)
 
 mat[100:160, 130:190] = 255
+
+# cv.imshow('initial', mat)
+# cv.waitKey()
 
 mask = np.zeros(mat.shape)
 mask[100:160, 130:190] = 1
@@ -46,8 +49,9 @@ harm_mat = harm_mat.astype(np.uint8)
 
 # --------------------------------------------
 
-inp = Inpainter(harm_mat, ((100, 130), (160, 190)))
-app_mat = inp.calculate_approximation_matrix()
+# (top-right row-col, bottom-left row-col)
+inp = Inpainter(harm_mat, (100, 130, 160, 190))
+app_mat = inp.inpaint()
 
-cv.imshow('app matrix', app_mat)
-cv.waitKey()
+plt.imshow(app_mat, cmap='gray')
+plt.show()

@@ -53,7 +53,7 @@ def reduce_matrix(matrix, window=5):
 
 
 def expand_matrix(matrix, window=5):
-    m, n = matrix.shape
+    m, n = matrix.shape[0], matrix.shape[1]
     expanded_mat = np.zeros((m * 2, n * 2))
     masks = {(0, 0): expand_gaussian_mask_2d(0, 0),
              (0, 1): expand_gaussian_mask_2d(0, 1),

@@ -16,7 +16,22 @@ target_region = (100, 130, 160, 190)
 
 mat[target_region[0]:target_region[2], target_region[1]:target_region[3]] = 255
 
-# print(mat)
+harmonic_mask = np.zeros(mat.shape[:-1], dtype=bool)
+harmonic_mask[target_region[0]:target_region[2],
+target_region[1]:target_region[3]] = 1
+
+# gray_matrix = cv.cvtColor(mat, cv.COLOR_BGR2GRAY)
+# harm_mat = inpaint.inpaint_biharmonic(gray_matrix, harmonic_mask)
+# plt.imshow(harm_mat, cmap='gray')
+# plt.show()
+
+
+harmonic_mat = inpaint.inpaint_biharmonic(mat, harmonic_mask,
+                                          channel_axis=-1)
+harmonic_mat = harmonic_mat * 255
+harmonic_mat = harmonic_mat.astype(np.uint8)
+plt.imshow(harmonic_mat)
+plt.show()
 
 # # plt.imshow(mat[..., ::-1])
 # # plt.show()
@@ -65,7 +80,8 @@ mat[target_region[0]:target_region[2], target_region[1]:target_region[3]] = 255
 
 
 inp = Inpainter(mat, target_region)
-restored_mat = inp.restore()
+# restored_mat = inp.restore()
+restored_mat = inp.inpaint(harmonic_mat, target_region)
 
-plt.imshow(restored_mat[...,::-1])
+plt.imshow(restored_mat[..., ::-1])
 plt.show()

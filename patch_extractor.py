@@ -5,8 +5,8 @@ class PatchExtractor:
     extraction_region = ((), ())
 
     def is_overlap(self, patch_r, target_region):
-        print(patch_r)
-        print(target_region)
+        # print(patch_r)
+        # print(target_region)
 
         # If one rectangle is on left side of other
         if (patch_r[0][0] > target_region[1][0] or target_region[0][0] > patch_r[1][0]):
@@ -23,8 +23,8 @@ class PatchExtractor:
 
     def get_patches(img, target_region):
 
-        #i1, j1, i2, j2 = target_region[0], target_region[1], target_region[2], target_region[3]
-        #target_region = ((j1 ,i1), (j2, i2))
+        i1, j1, i2, j2 = target_region[0], target_region[1], target_region[2], target_region[3]
+        target_region = ((j1 ,i1), (j2, i2))
 
         divider = 20
         patches = []
@@ -61,8 +61,8 @@ class PatchExtractor:
     def get_patches_by_size(self, img, x_scale, y_scale, size,
                             target_region=extraction_region):
         
-        #i1, j1, i2, j2 = target_region[0], target_region[1], target_region[2], target_region[3]
-        #target_region = ((j1 ,i1), (j2, i2))
+        i1, j1, i2, j2 = target_region[0], target_region[1], target_region[2], target_region[3]
+        target_region = ((j1 ,i1), (j2, i2))
 
         final_list = []
 

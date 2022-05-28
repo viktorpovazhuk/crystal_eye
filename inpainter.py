@@ -5,11 +5,10 @@ import math
 import cv2 as cv
 
 from patch_extractor import PatchExtractor
-from scale import reduce_matrix, expand_matrix
+from scale import reduce_matrix, expand_matrix, expand_color_matrix
 from skimage.restoration import inpaint
 
-DEBUG = False
-DEBUG_K = False
+DEBUG = True
 
 
 class Inpainter:
@@ -32,65 +31,79 @@ class Inpainter:
             scaled_mats.append(reduced_mat)
             tr_coords.append(tr_coords[i] // 2)
 
-        # print(scaled_mats[2].shape)
-        # plt.imshow(scaled_mats[2])
-        # plt.show()
-
         # apply harmonic inpainting on l2
         harmonic_mask = np.zeros(scaled_mats[2].shape[:-1], dtype=bool)
         harmonic_mask[tr_coords[2][0]:tr_coords[2][2],
         tr_coords[2][1]:tr_coords[2][3]] = 1
 
-        # print(harmonic_mask.shape)
-        # plt.imshow(harmonic_mask)
-        # plt.show()
+        plt.ylim(400)
+        plt.xlim(500)
+        plt.imshow(scaled_mats[2])
+        plt.show()
 
+        # TODO: why bad result
         harmonic_mat = inpaint.inpaint_biharmonic(scaled_mats[2], harmonic_mask,
                                                   channel_axis=-1)
+        plt.imshow(harmonic_mat)
+        plt.show()
         harmonic_mat = harmonic_mat * 255
         harmonic_mat = harmonic_mat.astype(np.uint8)
 
-        # TODO: convert to grayscale for harmonic inpainting
-        # plt.imshow(harmonic_mat)
-        # plt.show()
+        # TODO: convert to grayscale for harmonic inpainting -> no need
+        plt.imshow(harmonic_mat)
+        plt.show()
 
         # inpaint l2 = approximation matrix + patches
         cur_mat = self.inpaint(harmonic_mat, tr_coords[2])
+
+        if DEBUG:
+            plt.imshow(cur_mat)
+            plt.show()
+
         for i in [1, 0]:
             # make x2
-            adv_mat = expand_matrix(cur_mat)
+            adv_mat = expand_color_matrix(cur_mat)
+
+            if DEBUG:
+                plt.imshow(adv_mat)
+                plt.show()
+
             # extract w + insert in next l
             adv_tr = adv_mat[tr_coords[i][0]:tr_coords[i][2],
                      tr_coords[i][1]:tr_coords[i][3]]
-            cur_mat = scaled_mats[1]
+            cur_mat = scaled_mats[i]
             cur_mat[tr_coords[i][0]:tr_coords[i][2],
             tr_coords[i][1]:tr_coords[i][3]] = adv_tr
             # inpaint next l
             cur_mat = self.inpaint(cur_mat, tr_coords[i])
 
-            plt.imshow(cur_mat)
-            plt.show()
+            if DEBUG:
+                plt.imshow(cur_mat)
+                plt.show()
 
         return cur_mat
 
     def inpaint(self, matrix, target_region_coords):
-        p_extractor_target_region_coords = (
-        (target_region_coords[0], target_region_coords[1]),
-        (target_region_coords[2], target_region_coords[3]))
-
         matrix = matrix.copy()
-        p_size = 10
-        x_step, y_step = 5, 5
+        p_size = 4
+        x_step, y_step = 2, 2
         # convert to grayscale
         gray_matrix = cv.cvtColor(matrix, cv.COLOR_BGR2GRAY)
         # find appr matrix
         appr_mat = self.calculate_approximation_matrix(gray_matrix,
                                                        target_region_coords)
+
+        if DEBUG:
+            plt.xlabel('appr_mat')
+            plt.imshow(appr_mat, cmap='gray')
+            plt.show()
+
         # extract patches from S
         patch_extractor = PatchExtractor()
         S_ps = patch_extractor.get_patches_by_size(appr_mat, x_step, y_step, p_size,
-                                                   p_extractor_target_region_coords)
+                                                   target_region_coords)
         mat_p_i, mat_p_j = target_region_coords[0], target_region_coords[1]
+        print('patches extracted')
         while mat_p_i < target_region_coords[2]:
             while mat_p_j < target_region_coords[3]:
                 # extract p
@@ -101,18 +114,21 @@ class Inpainter:
                 compared = sorted(compared, key=lambda x: x[1], reverse=True)
                 # select first + prop values
                 p_coords = compared[0][0].coordinate
+                # print(matrix[p_coords[0]:p_coords[0] + p_size,
+                #       p_coords[1]:p_coords[1] + p_size].shape)
+                # print(appr_mat.shape)
                 matrix[mat_p_i:mat_p_i + p_size, mat_p_j:mat_p_j + p_size] \
                     = matrix[p_coords[0]:p_coords[0] + p_size,
                       p_coords[1]:p_coords[1] + p_size]
                 mat_p_j += p_size
             mat_p_i += p_size
             mat_p_j = target_region_coords[1]
+            if mat_p_i > target_region_coords[0] + (target_region_coords[2] - target_region_coords[0]) / 2:
+                plt.imshow(matrix)
+                plt.show()
         return matrix
 
     def calculate_approximation_matrix(self, matrix, target_region_coords):
-        target_region_coords = ((target_region_coords[0], target_region_coords[1]),
-                                (target_region_coords[2], target_region_coords[3]))
-
         U, s, VT = np.linalg.svd(matrix, full_matrices=False)
 
         Sigma = np.zeros((matrix.shape[0], matrix.shape[1]))
@@ -137,11 +153,11 @@ class Inpainter:
             ssim = self.calculate_ssim(init_patches, cur_patches)
             k -= 1
 
-            if DEBUG:
-                if k % 1 == 0:
-                    cv.imshow(f'SV: {k - 1}, ssim : {ssim}', cur_mat)
-                    cv.waitKey(0)
-                pass
+            # if DEBUG:
+            #     if k % 1 == 0:
+            #         cv.imshow(f'SV: {k - 1}, ssim : {ssim}', cur_mat)
+            #         cv.waitKey(0)
+            #     pass
 
         return prev_mat
 

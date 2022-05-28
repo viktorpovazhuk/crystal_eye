@@ -1,6 +1,17 @@
 import numpy as np
 
 
+def expand_color_matrix(matrix, window=5):
+    # obtain channels matrices
+    channels = matrix[:, :, 0], matrix[:, :, 1], \
+               matrix[:, :, 2]
+    # resize each channel matrix
+    expanded_channels = [expand_matrix(channel, window) for channel in channels]
+    # join channel mats
+    expanded_mat = np.dstack(expanded_channels)
+    return expanded_mat
+
+
 def reduce_gaussian_mask_2d(window=5, s=1):
     idx = np.linspace(-(window - 1) // 2, window // 2, num=window)
     mask_1d = np.exp((-idx ** 2 / (2 * s ** 2)))

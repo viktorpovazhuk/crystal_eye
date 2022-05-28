@@ -4,13 +4,16 @@ from patch import Patch
 class PatchExtractor:
     extraction_region = ((), ())
 
-    def is_overlap(img, target_region=extraction_region):
+    def is_overlap(self, patch_r, target_region):
+        print(patch_r)
+        print(target_region)
+
         # If one rectangle is on left side of other
-        if (img[0][0] > target_region[1][0] or target_region[0][0] > img[1][0]):
+        if (patch_r[0][0] > target_region[1][0] or target_region[0][0] > patch_r[1][0]):
             return False
 
         # If one rectangle is above other
-        if (img[1][1] < target_region[0][1] or target_region[1][1] < img[0][1]):
+        if (patch_r[1][1] < target_region[0][1] or target_region[1][1] < patch_r[0][1]):
             return False
 
         return True
@@ -19,6 +22,10 @@ class PatchExtractor:
         self.extraction_region = extraction_region
 
     def get_patches(img, target_region):
+
+        #i1, j1, i2, j2 = target_region[0], target_region[1], target_region[2], target_region[3]
+        #target_region = ((j1 ,i1), (j2, i2))
+
         divider = 20
         patches = []
 
@@ -53,6 +60,9 @@ class PatchExtractor:
 
     def get_patches_by_size(self, img, x_scale, y_scale, size,
                             target_region=extraction_region):
+        
+        #i1, j1, i2, j2 = target_region[0], target_region[1], target_region[2], target_region[3]
+        #target_region = ((j1 ,i1), (j2, i2))
 
         final_list = []
 
@@ -60,8 +70,8 @@ class PatchExtractor:
 
         for i in range(0, y_max - size, y_scale):
             for j in range(0, x_max - size, x_scale):
-                if not self.is_overlap(((j, i), (j + size, i + size)),
-                                       target_region):
+                if not self.is_overlap(((j, i), (j + size, i + size)), 
+                                        target_region):
                     final_list.append(Patch((j, i), img[i:i + size, j:j + size]))
                 if j + size + x_scale >= y_max:
                     if not self.is_overlap(((x_max - size, i), (x_max, i + size)),

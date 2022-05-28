@@ -68,12 +68,12 @@ class PatchExtractor:
 
         y_max, x_max = img.shape[0], img.shape[1]
 
-        for i in range(0, y_max - size, y_scale):
+        for i in range(0, y_max - size + y_scale, y_scale):
 
-            if i + size + y_scale >= y_max:
+            if i + size >= y_max:
                 i = y_max - size
-                for j in range(0, x_max - size, x_scale):
-                    if j + size + x_scale >= x_max:
+                for j in range(0, x_max - size + x_scale, x_scale):
+                    if j + size >= x_max:
                         if not self.is_overlap(
                                 ((x_max - size, i), (x_max, i + size)),
                                 target_region):
@@ -85,16 +85,16 @@ class PatchExtractor:
                             final_list.append(Patch((i, j), img[i:i + size, j:j + size]))
 
             else:
-                for j in range(0, x_max - size, x_scale):
-                    if j + size + x_scale >= x_max:
-                        if not self.is_overlap(((i, x_max - size), (x_max, i + size)),
+                for j in range(0, x_max - size + x_scale, x_scale):
+                    if j + size >= x_max:
+                        if not self.is_overlap(((x_max - size, i), (x_max, i + size)),
                                             target_region):
-                            final_list.append(Patch((x_max - size, i),
+                            final_list.append(Patch((i, x_max - size),
                                                     img[i:i + size, x_max - size:x_max]))
                     else:
-                        if not self.is_overlap(((i, j), (j + size, i + size)), 
+                        if not self.is_overlap(((j, i), (j + size, i + size)), 
                                                 target_region):
-                            final_list.append(Patch((j, i), img[i:i + size, j:j + size]))
+                            final_list.append(Patch((i, j), img[i:i + size, j:j + size]))
 
 
         return final_list

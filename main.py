@@ -2,22 +2,18 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 from inpainter import Inpainter
-from skimage.restoration import inpaint
 
-mat = cv.imread('data/butter.jpg', 0)
-print(mat.shape)
 
-mat[100:160, 130:190] = 255
+mat = cv.imread('data/butter.jpg', cv.IMREAD_UNCHANGED)
 
 # cv.imshow('initial', mat)
 # cv.waitKey()
 
-mask = np.zeros(mat.shape)
-mask[100:160, 130:190] = 1
+# (top-right row-col, bottom-left row-col)
+# (i1, j1, i2, j2)
+target_region = (100, 130, 160, 190)
 
-harm_mat = inpaint.inpaint_biharmonic(mat, mask)
-harm_mat = harm_mat * 255
-harm_mat = harm_mat.astype(np.uint8)
+mat[target_region[0]:target_region[2], target_region[1]:target_region[3]] = 255
 
 # cv.imshow('harmonic', harm_mat)
 # cv.waitKey()
@@ -49,9 +45,9 @@ harm_mat = harm_mat.astype(np.uint8)
 
 # --------------------------------------------
 
-# (top-right row-col, bottom-left row-col)
-inp = Inpainter(harm_mat, (100, 130, 160, 190))
-app_mat = inp.inpaint()
 
-plt.imshow(app_mat, cmap='gray')
+inp = Inpainter(mat, target_region)
+restored_mat = inp.restore()
+
+plt.imshow(restored_mat)
 plt.show()

@@ -19,7 +19,6 @@ class PatchExtractor:
         self.extraction_region = extraction_region
 
     def get_patches(img, target_region):
-
         divider = 20
         patches = []
 

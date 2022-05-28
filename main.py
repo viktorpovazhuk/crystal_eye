@@ -2,9 +2,10 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 from inpainter import Inpainter
+from scale import reduce_matrix, expand_matrix
+from skimage.restoration import inpaint
 
-
-mat = cv.imread('data/butter.jpg', cv.IMREAD_UNCHANGED)
+mat = cv.imread('data/butter.jpg', cv.IMREAD_COLOR)
 
 # cv.imshow('initial', mat)
 # cv.waitKey()
@@ -15,8 +16,25 @@ target_region = (100, 130, 160, 190)
 
 mat[target_region[0]:target_region[2], target_region[1]:target_region[3]] = 255
 
-# cv.imshow('harmonic', harm_mat)
-# cv.waitKey()
+# print(mat)
+
+# # plt.imshow(mat[..., ::-1])
+# # plt.show()
+#
+# channels = mat[:, :, 0], mat[:, :, 1], \
+#            mat[:, :, 2]
+# # resize each channel matrix
+# reduced_channels = [reduce_matrix(channel) for channel in channels]
+# # join channel mats
+# reduced_mat = np.dstack(reduced_channels)
+#
+# restored_mat = np.dstack(channels)
+#
+# plt.imshow(reduced_mat[..., ::-1])
+# plt.show()
+#
+# plt.imshow(restored_mat)
+# plt.show()
 
 # --------------------------------------------
 
@@ -49,5 +67,5 @@ mat[target_region[0]:target_region[2], target_region[1]:target_region[3]] = 255
 inp = Inpainter(mat, target_region)
 restored_mat = inp.restore()
 
-plt.imshow(restored_mat)
+plt.imshow(restored_mat[...,::-1])
 plt.show()

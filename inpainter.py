@@ -4,7 +4,7 @@ import sys
 import math
 import cv2 as cv
 
-from patch_extractor import patch_extractor
+from patch_extractor import PatchExtractor
 from scale import reduce_matrix, expand_matrix
 from skimage.restoration import inpaint
 
@@ -32,14 +32,27 @@ class Inpainter:
             scaled_mats.append(reduced_mat)
             tr_coords.append(tr_coords[i] // 2)
 
+        # print(scaled_mats[2].shape)
+        # plt.imshow(scaled_mats[2])
+        # plt.show()
+
         # apply harmonic inpainting on l2
-        harmonic_mask = np.zeros(scaled_mats[2].shape)
+        harmonic_mask = np.zeros(scaled_mats[2].shape[:-1], dtype=bool)
         harmonic_mask[tr_coords[2][0]:tr_coords[2][2],
         tr_coords[2][1]:tr_coords[2][3]] = 1
 
-        harmonic_mat = inpaint.inpaint_biharmonic(self._matrix, harmonic_mask)
+        # print(harmonic_mask.shape)
+        # plt.imshow(harmonic_mask)
+        # plt.show()
+
+        harmonic_mat = inpaint.inpaint_biharmonic(scaled_mats[2], harmonic_mask,
+                                                  channel_axis=-1)
         harmonic_mat = harmonic_mat * 255
         harmonic_mat = harmonic_mat.astype(np.uint8)
+
+        # TODO: convert to grayscale for harmonic inpainting
+        # plt.imshow(harmonic_mat)
+        # plt.show()
 
         # inpaint l2 = approximation matrix + patches
         cur_mat = self.inpaint(harmonic_mat, tr_coords[2])
@@ -55,28 +68,42 @@ class Inpainter:
             # inpaint next l
             cur_mat = self.inpaint(cur_mat, tr_coords[i])
 
+            plt.imshow(cur_mat)
+            plt.show()
+
         return cur_mat
 
     def inpaint(self, matrix, target_region_coords):
+        p_extractor_target_region_coords = (
+        (target_region_coords[0], target_region_coords[1]),
+        (target_region_coords[2], target_region_coords[3]))
+
         matrix = matrix.copy()
         p_size = 10
+        x_step, y_step = 5, 5
         # convert to grayscale
         gray_matrix = cv.cvtColor(matrix, cv.COLOR_BGR2GRAY)
         # find appr matrix
         appr_mat = self.calculate_approximation_matrix(gray_matrix,
                                                        target_region_coords)
-        S_ps = []
+        # extract patches from S
+        patch_extractor = PatchExtractor()
+        S_ps = patch_extractor.get_patches_by_size(appr_mat, x_step, y_step, p_size,
+                                                   p_extractor_target_region_coords)
         mat_p_i, mat_p_j = target_region_coords[0], target_region_coords[1]
         while mat_p_i < target_region_coords[2]:
             while mat_p_j < target_region_coords[3]:
-                # extract pes
+                # extract p
                 W_p = appr_mat[mat_p_i:mat_p_i + p_size, mat_p_j:mat_p_j + p_size]
                 # compare with all S patches
-                compared = [(S_p, self.calculate_ssim([S_p], [W_p])) for S_p in S_ps]
+                compared = [(S_p, self.calculate_ssim([S_p.patch], [W_p])) for S_p in
+                            S_ps]
                 compared = sorted(compared, key=lambda x: x[1], reverse=True)
                 # select first + prop values
+                p_coords = compared[0][0].coordinate
                 matrix[mat_p_i:mat_p_i + p_size, mat_p_j:mat_p_j + p_size] \
-                    = # patch from color image at coords of compared[0][0]
+                    = matrix[p_coords[0]:p_coords[0] + p_size,
+                      p_coords[1]:p_coords[1] + p_size]
                 mat_p_j += p_size
             mat_p_i += p_size
             mat_p_j = target_region_coords[1]
@@ -96,7 +123,7 @@ class Inpainter:
         ssim = 1
         prev_mat = matrix
         cur_mat = matrix
-        init_patches = patch_extractor.get_patches(matrix, target_region_coords)
+        init_patches = PatchExtractor.get_patches(matrix, target_region_coords)
 
         while True:
             if ssim < 0.3:
@@ -106,7 +133,7 @@ class Inpainter:
             cur_mat = np.round(cur_mat)
             cur_mat = cur_mat.astype(np.uint8)
 
-            cur_patches = patch_extractor.get_patches(cur_mat, target_region_coords)
+            cur_patches = PatchExtractor.get_patches(cur_mat, target_region_coords)
             ssim = self.calculate_ssim(init_patches, cur_patches)
             k -= 1
 

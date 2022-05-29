@@ -1,87 +1,49 @@
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
+import time
+
+from harmonic_inpainting import harmonic
 from inpainter import Inpainter
 from scale import reduce_matrix, expand_matrix
 from skimage.restoration import inpaint
 
-mat = cv.imread('data/butter.jpg', cv.IMREAD_COLOR)
+filename = 'bee'
 
-# cv.imshow('initial', mat)
-# cv.waitKey()
-
+mat = cv.imread('data/' + filename + '.jpg', cv.IMREAD_COLOR)
 # (top-right row-col, bottom-left row-col)
 # (i1, j1, i2, j2)
-target_region = (100, 130, 160, 190)
+# cover, butter
+# W_coords = np.array((100, 130, 160, 190))
+# boy
+W_coords = np.array((180, 28, 205, 50))
+W_coords = np.array((105, 82, 120, 97))
+# bee
+W_coords = np.array((760, 1100, 860, 1325))
+mat[W_coords[0]:W_coords[2], W_coords[1]:W_coords[3]] = 255
+patch_size = 6
+x_step, y_step = 4, 4
+beta = 0.8
 
-mat[target_region[0]:target_region[2], target_region[1]:target_region[3]] = 255
-
-harmonic_mask = np.zeros(mat.shape[:-1], dtype=bool)
-harmonic_mask[target_region[0]:target_region[2],
-target_region[1]:target_region[3]] = 1
-
-# gray_matrix = cv.cvtColor(mat, cv.COLOR_BGR2GRAY)
-# harm_mat = inpaint.inpaint_biharmonic(gray_matrix, harmonic_mask)
-# plt.imshow(harm_mat, cmap='gray')
+harmonic_mat = harmonic(mat, W_coords)
+# plt.imshow(harmonic_mat)
 # plt.show()
 
+inp = Inpainter()
+inp.set_params(beta)
 
-harmonic_mat = inpaint.inpaint_biharmonic(mat, harmonic_mask,
-                                          channel_axis=-1)
-harmonic_mat = harmonic_mat * 255
-harmonic_mat = harmonic_mat.astype(np.uint8)
-plt.imshow(harmonic_mat)
-plt.show()
+restored_mat = inp.restore(mat, W_coords, patch_size, x_step, y_step)
+# restored_mat = inp.inpaint(harmonic_mat, W_coords, patch_size, x_step, y_step)
 
-# # plt.imshow(mat[..., ::-1])
-# # plt.show()
-#
-# channels = mat[:, :, 0], mat[:, :, 1], \
-#            mat[:, :, 2]
-# # resize each channel matrix
-# reduced_channels = [reduce_matrix(channel) for channel in channels]
-# # join channel mats
-# reduced_mat = np.dstack(reduced_channels)
-#
-# restored_mat = np.dstack(channels)
-#
-# plt.imshow(reduced_mat[..., ::-1])
-# plt.show()
-#
-# plt.imshow(restored_mat)
-# plt.show()
+cur_time = time.strftime("%H_%M_%S")
 
-# --------------------------------------------
-
-# U, D, V = np.linalg.svd(mat)
-# m, n = mat.shape
-#
-# A_reconstructed = U[:,:n] @ np.diag(D) @ V[:m,:]
-# A_reconstructed = np.round(A_reconstructed)
-# A_reconstructed = A_reconstructed.astype(np.uint8)
-#
-# print(mat.dtype, A_reconstructed.dtype)
-
-# --------------------------------------------
-
-# A_reconstructed = A_reconstructed.flatten()
-# mat = mat.flatten()
-
-# for i in range(len(mat)):
-#     if A_reconstructed[i] != mat[i]:
-#         print(f'{A_reconstructed[i]} : {mat[i]}')
-
-# cv.imshow('butterfly', A_reconstructed)
-# cv.waitKey()
-# cv.imshow('butterfly', mat)
-# cv.waitKey()
-
-# --------------------------------------------
-
-
-inp = Inpainter(mat, target_region)
-# restored_mat = inp.restore()
-restored_mat = inp.inpaint(harmonic_mat, target_region)
+with open(f'results/params.txt', 'a') as f:
+    f.write(f'{filename}_{cur_time}:\n'
+            f'patch_size: {patch_size}\n'
+            f'x_step: {x_step}, y_step: {y_step}\n'
+            f'beta: {beta}\n'
+            f'--------------------\n\n')
 
 plt.imshow(restored_mat[..., ::-1])
+plt.savefig(f'results/{filename}_{cur_time}.png')
 plt.show()

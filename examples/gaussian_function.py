@@ -1,10 +1,6 @@
-import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-import matplotlib
-from inpainter import Inpainter
-from skimage.restoration import inpaint
-import scale
+from src import scale
 
 mat = cv.imread('../data/butter.jpg', 0)
 print(mat.shape)

@@ -37,7 +37,7 @@ restored_mat = inp.restore(mat, W_coords, patch_size, x_step, y_step)
 
 cur_time = time.strftime("%H_%M_%S")
 
-with open(f'results/params.txt', 'a') as f:
+with open(f'../results/params.txt', 'a') as f:
     f.write(f'{filename}_{cur_time}:\n'
             f'patch_size: {patch_size}\n'
             f'x_step: {x_step}, y_step: {y_step}\n'

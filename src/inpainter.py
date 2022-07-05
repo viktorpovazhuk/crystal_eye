@@ -11,7 +11,7 @@ from scale import reduce_matrix, expand_matrix, expand_color_matrix, reduce_colo
 from skimage.restoration import inpaint
 
 DEBUG = True
-path_prefix = 'results/bird/'
+path_prefix = 'results/test/'
 
 
 class Inpainter:
@@ -22,6 +22,7 @@ class Inpainter:
         self._beta = beta
 
     def restore(self, matrix, W_coords, patch_size, x_step, y_step):
+        # 3 levels of matrices and parameters
         scaled_mats = [matrix.copy()]
         scaled_W_coords = [W_coords.copy()]
         patch_sizes = [patch_size]

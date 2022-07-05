@@ -8,7 +8,6 @@ def harmonic(matrix, W_coords):
     harmonic_mask[W_coords[0]:W_coords[2],
     W_coords[1]:W_coords[3]] = 1
 
-    # TODO: why bad result for low resolution
     harmonic_mat = inpaint.inpaint_biharmonic(matrix, harmonic_mask,
                                               channel_axis=-1)
     harmonic_mat = harmonic_mat * 255

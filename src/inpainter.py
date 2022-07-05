@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import sys
 import math
 import cv2 as cv
+import time
 
 from harmonic_inpainting import harmonic
 from patch_extractor import PatchExtractor
@@ -10,6 +11,7 @@ from scale import reduce_matrix, expand_matrix, expand_color_matrix, reduce_colo
 from skimage.restoration import inpaint
 
 DEBUG = True
+path_prefix = 'results/test/'
 
 
 class Inpainter:
@@ -20,22 +22,39 @@ class Inpainter:
         self._beta = beta
 
     def restore(self, matrix, W_coords, patch_size, x_step, y_step):
+        # 3 levels of matrices and parameters
         scaled_mats = [matrix.copy()]
         scaled_W_coords = [W_coords.copy()]
+        patch_sizes = [patch_size]
+        x_steps, y_steps = [x_step], [y_step]
 
         for i in range(2):
             scaled_mats.append(reduce_color_matrix(scaled_mats[i]))
-            scaled_W_coords.append(scaled_W_coords[i] // 2)
+            cur_W_coords = scaled_W_coords[i] // 2
+            cur_W_coords[-2:] += 1
+            cur_W_coords[:2] -= 1
+            scaled_W_coords.append(cur_W_coords)
+            patch_sizes.append(max(patch_sizes[i] // 2, 3))
+            x_steps.append(max(x_steps[i] // 2, 2))
+            y_steps.append(max(y_steps[i] // 2, 2))
 
         # apply harmonic inpainting on l2
         harmonic_mat = harmonic(scaled_mats[2], scaled_W_coords[2])
 
         if DEBUG:
+            plt.title('harmonic')
             plt.imshow(harmonic_mat)
+            plt.savefig(f'{path_prefix}/{time.strftime("%H_%M_%S")}.png')
             plt.show()
 
         # inpaint l2 = approximation matrix + patches
-        cur_mat = self.inpaint(harmonic_mat, scaled_W_coords[2], patch_size, x_step, y_step)
+        cur_mat = self.inpaint(harmonic_mat, scaled_W_coords[2], patch_sizes[2], x_steps[2], y_steps[2])
+
+        if DEBUG:
+            plt.title('inpainted L2')
+            plt.imshow(cur_mat)
+            plt.savefig(f'{path_prefix}/{time.strftime("%H_%M_%S")}.png')
+            plt.show()
 
         for i in [1, 0]:
             # make x2
@@ -49,7 +68,13 @@ class Inpainter:
             scaled_W_coords[i][1]:scaled_W_coords[i][3]] = adv_W
 
             # inpaint next l
-            cur_mat = self.inpaint(cur_mat, scaled_W_coords[i], patch_size, x_step, y_step)
+            cur_mat = self.inpaint(cur_mat, scaled_W_coords[i], patch_sizes[i], x_steps[i], y_steps[i])
+
+            if DEBUG:
+                plt.title(f'inpainted L{i}')
+                plt.imshow(cur_mat)
+                plt.savefig(f'{path_prefix}/{time.strftime("%H_%M_%S")}.png')
+                plt.show()
 
         return cur_mat
 
@@ -63,8 +88,9 @@ class Inpainter:
                                                        W_coords)
 
         if DEBUG:
-            plt.xlabel('appr_mat')
+            plt.title('approximation')
             plt.imshow(appr_mat, cmap='gray')
+            plt.savefig(f'{path_prefix}/{time.strftime("%H_%M_%S")}.png')
             plt.show()
 
         # extract patches from S
@@ -81,9 +107,12 @@ class Inpainter:
         matrix = matrix.copy()
 
         mat_p_i, mat_p_j = W_coords[0], W_coords[1]
+        num_work_patches = ((W_coords[2] - W_coords[0]) // patch_size) * \
+                           ((W_coords[3] - W_coords[1]) // patch_size)
 
         if DEBUG:
             print('patches extracted')
+            print(f'number in W: {num_work_patches}')
 
         p_num = 0
         while mat_p_i < W_coords[2]:
@@ -105,7 +134,8 @@ class Inpainter:
                 if DEBUG:
                     print(f'{p_num} patch done')
                     p_num += 1
-                    if p_num % 30 == 0:
+                    if p_num % (num_work_patches // 3) == 0:
+                        plt.title('progress')
                         plt.imshow(matrix)
                         plt.show()
 

@@ -13,3 +13,27 @@ parameters for Inpainter:
 patch_size = 6
 x_step, y_step = 4, 4
 beta = 0.9
+
+in config format:
+
+path= butter.jpg
+beta = 0.8
+patch_size = 6
+x_step = 4
+y_step = 4
+target_region = 100, 130, 160, 190
+...
+path= boy.jpg
+beta = 0.8
+patch_size = 6
+x_step = 4
+y_step = 4
+target_region = 180, 28, 205, 50
+...
+path= bee.jpg
+beta = 0.8
+patch_size = 6
+x_step = 4
+y_step = 4
+target_region = 760, 1100, 860, 1325
+...

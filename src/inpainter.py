@@ -10,8 +10,8 @@ from patch_extractor import PatchExtractor
 from scale import reduce_matrix, expand_matrix, expand_color_matrix, reduce_color_matrix
 from skimage.restoration import inpaint
 
-DEBUG = True
-path_prefix = 'results/test/'
+DEBUG = False
+path_prefix = '../results/test/'
 
 
 class Inpainter:
